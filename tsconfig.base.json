@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    /* Target and module — architecture §12: modern evergreen browsers, ES2020 */
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+
+    /* Strictness — ADR-0002: TypeScript is carried specifically to make C-03
+       (closed attribute list) and C-04 (three priority levels) build-time
+       guarantees. That only holds with strict mode fully on. */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+
+    /* This project emits via Vite only; tsc is used for type checking. */
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "useDefineForClassFields": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}

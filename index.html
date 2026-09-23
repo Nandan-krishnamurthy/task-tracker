@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Tracker</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <!--
+      Semantic page skeleton (T-401), matching architecture §4.1.
+
+      These four landmarks are STATIC: a heading, and one container for each of
+      the three regions. Nothing here changes at runtime. The UI modules mount
+      INTO the regions — `ui/taskForm.ts` into [data-region="form"],
+      `ui/filterBar.ts` into [data-region="filter"], and `ui/taskList.ts` into
+      [data-region="list"] — so the document outline is fixed markup a reader
+      can check, not something assembled by script.
+
+      `data-region` rather than an id for the mount points: ids are the UI's to
+      spend on label/description wiring, and a data attribute says plainly that
+      this is a structural hook.
+    -->
+    <div id="app">
+      <header class="app-header">
+        <h1>Task Tracker</h1>
+      </header>
+
+      <main class="app-main">
+        <section class="region region--form" aria-labelledby="create-heading" data-region="form">
+          <h2 class="region__heading" id="create-heading">Add a task</h2>
+        </section>
+
+        <section class="region region--filter" aria-labelledby="filter-heading" data-region="filter">
+          <h2 class="region__heading" id="filter-heading">View</h2>
+        </section>
+
+        <section class="region region--list" aria-labelledby="list-heading" data-region="list">
+          <h2 class="region__heading" id="list-heading">Tasks</h2>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

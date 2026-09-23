@@ -1,0 +1,20 @@
+{
+  /*
+   * Application sources only — the browser-purity gate.
+   *
+   * Node type definitions are deliberately absent. `src/` runs in a browser
+   * and nowhere else: C-01 puts any server out of scope, and NFR-SEC-001
+   * requires that no task data leave the browser. Without node types, a stray
+   * `process`, `fs`, or other node-only import in `src/` is a compile error
+   * rather than something to catch in review.
+   *
+   * Run first by `npm run typecheck`, ahead of the broader tsconfig.json.
+   */
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

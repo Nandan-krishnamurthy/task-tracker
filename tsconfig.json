@@ -1,0 +1,17 @@
+{
+  /*
+   * Default project — covers every TypeScript file in the repo (sources,
+   * tests, and build configuration), so editors resolve all of them.
+   *
+   * Node types are available here because Vitest and Playwright both run under
+   * Node. The stricter browser-only boundary for `src/` is enforced by
+   * tsconfig.app.json, which the `typecheck` script runs first.
+   */
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src", "tests", "*.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,422 @@
+/*
+ * Stylesheet (T-401 baseline, completed at T-503).
+ *
+ * Plain CSS, no framework and no preprocessor (architecture §1.3). No
+ * animation, no theming, no component library — T-503 rules out all three, and
+ * none of them serves an acceptance criterion.
+ *
+ * Every colour the interface uses is declared once, below, as a custom
+ * property. That is not tidiness for its own sake: it makes "contrast meets
+ * WCAG 2.1 AA" a property of a short list of named values that a test can
+ * parse and verify numerically, rather than a claim someone has to re-check by
+ * eye every time a rule is edited. `tests/dom/page-skeleton.test.ts` reads
+ * these declarations and computes the ratios.
+ *
+ * Layout is flexbox with wrapping throughout, and every length is relative.
+ * That is what makes the page hold together from roughly 320 px up without a
+ * per-breakpoint layout to maintain: the content reflows rather than being
+ * repositioned. One narrow-width query stacks the two forms, which is the only
+ * place wrapping alone is not enough.
+ */
+
+:root {
+  /* Surfaces */
+  --color-bg: #ffffff;
+  --color-surface: #f4f5f7;
+
+  /* Text */
+  --color-text: #16191d;
+  --color-text-muted: #5a6069;
+
+  /* Lines and controls */
+  --color-border: #767c85;
+
+  /* Accents. `--color-on-accent` is the text colour used on both fills. */
+  --color-accent: #1f4ea8;
+  --color-danger: #a4232b;
+  --color-on-accent: #ffffff;
+
+  /*
+   * The focus ring. Deliberately a different hue from --color-accent so that
+   * a focused primary button is still obviously focused: the ring reads
+   * against the page, not against the button it surrounds, which is also why
+   * every ring below carries an outline-offset.
+   */
+  --color-focus: #c2410c;
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+
+  --radius: 0.25rem;
+
+  /*
+   * Pins the user-agent rendering of <input type="date"> and <select> to their
+   * light styling.
+   *
+   * This is NOT theming — there is one theme and this declares which one it
+   * is. Without it, a browser on a dark-mode operating system renders those
+   * two native controls dark against this page's white surfaces, and the
+   * contrast ratios verified above stop describing what the user sees.
+   */
+  color-scheme: light;
+}
+
+/* ───────────────────────────── base typography ──────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: var(--space-lg) var(--space-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+#app {
+  margin: 0 auto;
+  max-width: 44rem;
+}
+
+.app-header h1 {
+  margin: 0 0 var(--space-lg);
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.region {
+  margin-bottom: var(--space-lg);
+}
+
+.region__heading {
+  margin: 0 0 var(--space-sm);
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+/*
+ * Visually hidden but still announced. Used for labels that the layout makes
+ * obvious to a sighted user but that assistive technology still needs.
+ * Never `display: none` — that would remove the element from the
+ * accessibility tree, which is the opposite of the intent.
+ */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ─────────────────────────── the focus indicator ────────────────────────── */
+
+/*
+ * AC-A11Y.3: keyboard focus is visible at all times while tabbing.
+ *
+ * Applied to every interactive element, with an offset so the ring is drawn
+ * clear of the control's own fill and border rather than blending into them.
+ * Nothing in this stylesheet sets `outline: none`; architecture §9.6 permits
+ * removing the indicator only if it is replaced, and the simpler discipline is
+ * never to remove it at all.
+ *
+ * `:focus-visible` for pointer users and `:focus` as the fallback for engines
+ * that do not implement it, so the ring can never be missing entirely.
+ */
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+[tabindex]:focus {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* ──────────────────────────────── controls ─────────────────────────────── */
+
+input[type='text'],
+input[type='date'],
+select {
+  /* max-width, never a fixed width: a control that cannot shrink is what puts
+     a horizontal scrollbar on a 320 px screen. */
+  max-width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+button {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+button[type='submit'] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.button--danger {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: var(--color-on-accent);
+}
+
+/* ─────────────────────────────── the forms ─────────────────────────────── */
+
+.task-form,
+.task-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: flex-end;
+}
+
+.task-form {
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  /* Lets a flex item shrink below its content width rather than forcing the
+     row wider than the screen. */
+  min-width: 0;
+}
+
+.field--grow {
+  flex: 1 1 12rem;
+}
+
+.field label {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+/*
+ * The validation message (architecture §9.5, AC-009.2, AC-009.6).
+ *
+ * Always present in the document and empty when there is nothing to say: a
+ * live region has to exist before the text arrives for the announcement to be
+ * reliable, so this is never toggled with `hidden` or `display: none`. An
+ * empty paragraph occupies no space, so there is nothing to hide.
+ *
+ * The message is carried by TEXT. Colour and weight are emphasis on top of it,
+ * never the signal itself (AC-A11Y.5).
+ */
+.form-error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* ──────────────────────────────── filter bar ───────────────────────────── */
+
+.filter-bar__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.filter-button[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 600;
+}
+
+/* ──────────────────────────────── task list ────────────────────────────── */
+
+.task-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.task {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-sm);
+  align-items: center;
+  padding: var(--space-sm) var(--space-xs);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.task__toggle {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.task__title {
+  /* Grows to fill the row, but may shrink to 9rem before wrapping to its own
+     line. `anywhere` is what keeps a 500-character title with no spaces from
+     forcing the page wider than the viewport (AC-001.4 stores such titles
+     verbatim, so the layout has to cope with them). */
+  flex: 1 1 9rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.task__meta {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+/*
+ * Priority is a WORD first (AC-003.6, architecture §9.6). Weight and colour
+ * are added on top so a high-priority task carries at a glance (DO-2) — strip
+ * every colour from this page and each level still reads as text.
+ */
+.task__priority--high {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.task__priority--medium {
+  color: var(--color-text);
+}
+
+/* The first action button pushes the pair to the end of whatever line it
+   lands on, so Edit and Delete stay together at any width. */
+.task__edit {
+  flex: none;
+  margin-left: auto;
+}
+
+.task__delete {
+  flex: none;
+}
+
+/*
+ * AC-004.7 / architecture §9.6: a completed task must be distinguishable by
+ * more than colour. Three independent signals carry it — the strike-through,
+ * the muted text, and the literal word "Completed" rendered in the row by
+ * `ui/taskItem.ts`. Remove the colour entirely and the state is still legible.
+ */
+.task--completed .task__title {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.task__status {
+  flex: none;
+  padding: 0 var(--space-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ───────────────────────────── the edit row ────────────────────────────── */
+
+.task--editing {
+  padding: 0;
+}
+
+.task-edit {
+  width: 100%;
+  padding: var(--space-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+}
+
+/* ──────────────────────────────── empty state ──────────────────────────── */
+
+.empty-state {
+  margin: 0;
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+}
+
+/* ─────────────────────────────── narrow widths ─────────────────────────── */
+
+/*
+ * The single breakpoint.
+ *
+ * Wrapping handles the task rows on its own. The two forms are the exception:
+ * three labelled fields and two buttons side by side cannot wrap into anything
+ * readable at phone width, so below this width they stack and the controls go
+ * full-bleed. Expressed in `rem` so it tracks the user's font size rather than
+ * a device pixel count.
+ */
+@media (max-width: 34rem) {
+  body {
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  .app-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .task-form,
+  .task-edit {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .task-form .field,
+  .task-edit .field,
+  .field--grow {
+    flex: 1 1 auto;
+  }
+
+  .task-form button,
+  .task-edit button {
+    width: 100%;
+  }
+
+  /* The title takes its own line, so the metadata and actions below it have
+     the full width to share. */
+  .task__title {
+    flex: 1 1 100%;
+  }
+
+  .task__edit {
+    margin-left: 0;
+  }
+}
