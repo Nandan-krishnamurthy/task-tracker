@@ -1,0 +1,62 @@
+# Deploy the static bundle to GitHub Pages.
+#
+# C-06 calls for a single-stage rollout of a standalone client-side web app,
+# and architecture §11 says the deliverable is `dist/` served from any static
+# host. GitHub Pages is that static host: it serves files and nothing else, so
+# there is no server tier to contradict C-01 and no place for task data to go.
+#
+# Rollback is re-running this workflow at an earlier commit — there is no
+# server-side state to unwind.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege: read the tree, mint the Pages OIDC token, publish.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time. `cancel-in-progress: false` so a queued deploy is not
+# dropped mid-publish, leaving the site on a half-old build.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm run build` runs `typecheck` first, so a type error fails the
+      # deploy rather than shipping.
+      - name: Build
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

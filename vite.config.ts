@@ -9,6 +9,24 @@ import { defineConfig } from 'vite';
  */
 export default defineConfig({
   root: '.',
+
+  /*
+   * Relative asset paths.
+   *
+   * The app is published to GitHub Pages as a project site, so it is served
+   * from a sub-path (`/task-tracker/`) rather than from a domain root. A
+   * relative base makes the emitted `<script>`/`<link>` hrefs resolve against
+   * whatever directory `index.html` is served from, so the same `dist/` works
+   * unchanged at the Pages sub-path, at a domain root, and from `vite preview`
+   * on localhost. That keeps deployment a hosting concern rather than a build
+   * flag the e2e suite has to know about.
+   *
+   * Safe here because there is no client-side router and no deep-linked route:
+   * C-01 puts routing and servers out of scope, so `index.html` is the only
+   * document ever requested.
+   */
+  base: './',
+
   build: {
     outDir: 'dist',
     emptyOutDir: true,
