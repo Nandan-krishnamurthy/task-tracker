@@ -35,22 +35,91 @@ jobs:
         run: npm ci
 
       - name: Typecheck
+        id: typecheck
         run: npm run typecheck
 
-      # Tiers 1 and 2: unit (node) and DOM (jsdom).
+      # Tiers 1 and 2: unit (node) and DOM (jsdom). The JSON reporter is added
+      # alongside the default one so the job summary can report real counts.
       - name: Unit and DOM tests
-        run: npm test
+        id: vitest
+        run: npm test -- --reporter=default --reporter=json --outputFile.json="$RUNNER_TEMP/vitest-results.json"
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
       # Tier 3. playwright.config.ts uses only the `list` reporter under CI, so
-      # the HTML reporter is added here to produce a report worth uploading.
-      # The config's webServer builds and previews the production bundle.
+      # the HTML reporter is added here to produce a report worth uploading,
+      # and the JSON reporter for the job summary. The config's webServer
+      # builds and previews the production bundle.
       - name: End-to-end tests
-        run: npm run test:e2e -- --reporter=list,html
+        id: e2e
+        run: npm run test:e2e -- --reporter=list,html,json
         env:
           PLAYWRIGHT_HTML_OPEN: never
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/playwright-results.json
+
+      # Counts come from the reporters' JSON output, never from this file.
+      - name: Write job summary
+        if: ${{ !cancelled() }}
+        env:
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          VITEST: ${{ steps.vitest.outcome }}
+          E2E: ${{ steps.e2e.outcome }}
+        run: |
+          node <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const tmp = process.env.RUNNER_TEMP;
+          const n = (x) => x.toLocaleString('en-US');
+          const read = (f) => {
+            try { return JSON.parse(fs.readFileSync(path.join(tmp, f), 'utf8')); }
+            catch { return null; }
+          };
+
+          // A step that never ran has outcome "skipped"; one that ran but
+          // produced no report crashed before its reporter could write.
+          const status = (outcome, detail) =>
+            outcome === 'success' ? `✅ ${detail}`
+            : outcome === 'skipped' ? '⏭️ not run'
+            : `❌ ${detail}`;
+
+          const rows = [];
+          let passed = 0;
+
+          rows.push(['Typecheck', status(process.env.TYPECHECK,
+            process.env.TYPECHECK === 'success' ? 'passed' : 'failed')]);
+
+          const v = read('vitest-results.json');
+          if (v) passed += v.numPassedTests;
+          rows.push(['Unit + DOM (Vitest)', status(process.env.VITEST, v
+            ? `${n(v.numPassedTests)} passed` +
+              (v.numFailedTests ? `, ${n(v.numFailedTests)} failed` : '') +
+              ` (${v.testResults.length} files)`
+            : 'no results')]);
+
+          const p = read('playwright-results.json');
+          let flaky = 0;
+          if (p) {
+            flaky = p.stats.flaky;
+            passed += p.stats.expected + flaky;
+          }
+          rows.push(['E2E (Playwright)', status(process.env.E2E, p
+            ? `${n(p.stats.expected + flaky)} passed` +
+              (p.stats.unexpected ? `, ${n(p.stats.unexpected)} failed` : '') +
+              (flaky ? ` (${flaky} passed on retry)` : '')
+            : 'no results')]);
+
+          const allOk = [process.env.TYPECHECK, process.env.VITEST, process.env.E2E]
+            .every((o) => o === 'success');
+          rows.push(['**Total**', `${allOk ? '✅' : '❌'} **${n(passed)} passed**`]);
+
+          console.log('## Test results\n');
+          console.log('| Check | Result |');
+          console.log('| --- | --- |');
+          for (const [check, result] of rows) console.log(`| ${check} | ${result} |`);
+          console.log(`\nCommit \`${process.env.GITHUB_SHA.slice(0, 7)}\`. ` +
+            'The full Playwright HTML report is attached as the `playwright-report` artifact below.');
+          EOF
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
